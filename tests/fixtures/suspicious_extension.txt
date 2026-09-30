@@ -1,0 +1,1 @@
+This is a benign diagnostic text document used for extension scoring tests.
