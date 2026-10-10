@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 
 from app.core.quarantine import quarantine_manager
 from app.core.scanner import FileScanner, ScanResult
+from app.threat_intel.threat_client import ThreatReport, threat_client
 from app.ui.styles import (
     COLOR_ACCENT_CYAN,
     COLOR_TEXT_PRIMARY,
@@ -237,12 +238,23 @@ class ScannerView(QWidget):
         )
         right_layout.addWidget(self.txt_reasons)
 
-        # Quarantine Action Button
+        # Action Buttons Row
+        action_btn_row = QHBoxLayout()
+
+        self.btn_threat_intel = QPushButton("🌐 Check VirusTotal")
+        self.btn_threat_intel.setProperty("class", "btn-secondary")
+        self.btn_threat_intel.setEnabled(False)
+        self.btn_threat_intel.clicked.connect(self._on_check_threat_intel)
+        action_btn_row.addWidget(self.btn_threat_intel)
+
         self.btn_quarantine = QPushButton("🛑 Isolate to Quarantine Vault")
         self.btn_quarantine.setProperty("class", "btn-danger")
         self.btn_quarantine.setEnabled(False)
         self.btn_quarantine.clicked.connect(self._on_quarantine_selected)
-        right_layout.addWidget(self.btn_quarantine)
+        action_btn_row.addWidget(self.btn_quarantine)
+
+        right_layout.addLayout(action_btn_row)
+
 
         splitter.addWidget(right_widget)
         splitter.setSizes([450, 450])
@@ -382,6 +394,18 @@ class ScannerView(QWidget):
             f"Created : {res.metadata.created_time.strftime('%Y-%m-%d %H:%M:%S')}",
             f"Modified: {res.metadata.modified_time.strftime('%Y-%m-%d %H:%M:%S')}",
         ]
+
+        if res.ml_prediction and getattr(res.ml_prediction, "is_pe", False):
+            meta_lines.append("───────────────────────────────────")
+            meta_lines.append(f"AI Model: {res.ml_prediction.model_version}")
+            meta_lines.append(
+                f"AI Malware Prob: {res.ml_prediction.malware_probability:.1%} ({res.ml_prediction.classification})"
+            )
+            meta_lines.append(f"AI Confidence: {res.ml_prediction.confidence:.1%}")
+            if res.ml_prediction.top_features:
+                top_indicators = ", ".join([name for name, _ in res.ml_prediction.top_features[:3]])
+                meta_lines.append(f"AI Top Indicators: {top_indicators}")
+
         self.txt_metadata.setPlainText("\n".join(meta_lines))
 
         # Reasons
@@ -389,16 +413,17 @@ class ScannerView(QWidget):
         for r in res.assessment.reasons:
             icon = (
                 "⚠️"
-                if ("Suspicious" in r or "High entropy" in r or "YARA" in r or "Script" in r)
+                if ("Suspicious" in r or "High entropy" in r or "YARA" in r or "Script" in r or "AI" in r)
                 else "✓"
             )
             reasons_formatted.append(f"{icon}  {r}")
 
         self.txt_reasons.setPlainText("\n".join(reasons_formatted))
 
-        # Quarantine button active if file exists on disk
+        # Quarantine and Threat Intel buttons
         file_exists = Path(res.metadata.path).exists()
         self.btn_quarantine.setEnabled(file_exists)
+        self.btn_threat_intel.setEnabled(True)
 
     def _clear_detail_panel(self) -> None:
         self.lbl_detail_name.setText("Select a file to inspect details")
@@ -408,6 +433,26 @@ class ScannerView(QWidget):
         self.txt_metadata.clear()
         self.txt_reasons.clear()
         self.btn_quarantine.setEnabled(False)
+        self.btn_threat_intel.setEnabled(False)
+
+    def _on_check_threat_intel(self) -> None:
+        if not self.selected_result:
+            return
+
+        sha256 = self.selected_result.metadata.sha256
+        report: ThreatReport = threat_client.lookup_file_hash(sha256)
+
+        msg = (
+            f"Indicator: {report.indicator}\n"
+            f"Status: {report.status}\n"
+            f"Threat Score: {report.score}/100\n"
+            f"Engines Flagged: {report.malicious_count}/{report.total_engines}\n"
+            f"Label: {report.threat_label or 'None'}\n"
+            f"Summary: {report.message}\n"
+            f"Cached: {'Yes' if report.is_cached else 'No'}"
+        )
+        QMessageBox.information(self, "VirusTotal Reputation Report", msg)
+
 
     def _on_quarantine_selected(self) -> None:
         if not self.selected_result:

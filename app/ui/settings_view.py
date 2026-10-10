@@ -111,7 +111,31 @@ class SettingsView(QWidget):
 
         layout.addWidget(group_mon)
 
-        # 3. YARA Engine & Diagnostics
+        # 3. Phase 2: AI & Real-Time Monitoring
+        group_p2 = QGroupBox("AI Engine & Real-Time Security (Phase 2)")
+        group_p2.setStyleSheet(
+            "QGroupBox { color: #f8fafc; font-weight: bold; border: 1px solid #1e293b; border-radius: 8px; margin-top: 10px; padding: 16px; } QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 5px; }"
+        )
+        p2_layout = QVBoxLayout(group_p2)
+        p2_layout.setSpacing(10)
+
+        self.chk_ml_active = QCheckBox("Enable AI Machine Learning PE Classifier (EMBER Model)")
+        self.chk_ml_active.setChecked(settings.ml_enabled)
+        self.chk_ml_active.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-weight: 500;")
+        p2_layout.addWidget(self.chk_ml_active)
+
+        ml_row = QHBoxLayout()
+        ml_row.addWidget(QLabel("ML Malware Threshold (%):"))
+        self.spin_ml_thresh = QSpinBox()
+        self.spin_ml_thresh.setRange(40, 95)
+        self.spin_ml_thresh.setValue(int(settings.ml_malware_threshold * 100))
+        ml_row.addWidget(self.spin_ml_thresh)
+        ml_row.addStretch()
+        p2_layout.addLayout(ml_row)
+
+        layout.addWidget(group_p2)
+
+        # 4. YARA Engine & Diagnostics
         group_yara = QGroupBox("YARA Engine Status & Rules")
         group_yara.setStyleSheet(
             "QGroupBox { color: #f8fafc; font-weight: bold; border: 1px solid #1e293b; border-radius: 8px; margin-top: 10px; padding: 16px; } QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 5px; }"
@@ -172,7 +196,10 @@ class SettingsView(QWidget):
         settings.threshold_safe_max = self.spin_safe.value()
         settings.threshold_low_max = self.spin_low.value()
         settings.threshold_high_max = self.spin_high.value()
+        settings.ml_enabled = self.chk_ml_active.isChecked()
+        settings.ml_malware_threshold = float(self.spin_ml_thresh.value() / 100.0)
         download_monitor.watch_dir = Path(self.txt_watch_dir.text())
 
         QMessageBox.information(self, "Saved", "SentinelX configuration updated.")
         self.settings_updated.emit()
+

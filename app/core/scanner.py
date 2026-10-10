@@ -12,6 +12,7 @@ from app.core.risk_engine import RiskAssessmentResult, risk_engine
 from app.database.database import db
 from app.database.models import ScannedFileRecord
 from app.detection.yara_engine import YaraMatch, yara_engine
+from app.ml.classifier import MLPredictionResult, pe_classifier
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class ScanResult:
     static_analysis: StaticAnalysisResult
     yara_matches: list[YaraMatch]
     assessment: RiskAssessmentResult
+    ml_prediction: MLPredictionResult | None = None
     db_record_id: int | None = None
     error: str | None = None
 
@@ -62,10 +64,22 @@ class FileScanner:
         # 3. YARA rule matching
         yara_matches = yara_engine.scan_file(resolved)
 
-        # 4. Multi-factor Risk scoring
-        assessment = risk_engine.evaluate(metadata, analysis, yara_matches)
+        # 4. Phase 2: Machine Learning PE classification
+        ml_prediction: MLPredictionResult | None = None
+        if settings.ml_enabled and (
+            analysis.is_pe or resolved.suffix.lower() in {".exe", ".dll", ".sys", ".scr"}
+        ):
+            try:
+                ml_prediction = pe_classifier.predict(resolved)
+            except Exception as e:
+                logger.warning(f"ML evaluation failed for {resolved}: {e}")
 
-        # 5. Persist record to SQLite
+        # 5. Multi-factor Risk scoring
+        assessment = risk_engine.evaluate(
+            metadata, analysis, yara_matches, ml_prediction=ml_prediction
+        )
+
+        # 6. Persist record to SQLite
         db_id = None
         if self.save_to_db:
             record = ScannedFileRecord(
@@ -86,8 +100,10 @@ class FileScanner:
             static_analysis=analysis,
             yara_matches=yara_matches,
             assessment=assessment,
+            ml_prediction=ml_prediction,
             db_record_id=db_id,
         )
+
 
     def scan_directory(
         self,

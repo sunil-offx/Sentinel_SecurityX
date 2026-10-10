@@ -13,8 +13,13 @@ from PySide6.QtWidgets import (
 )
 
 from app.monitoring.download_monitor import download_monitor
+from app.monitoring.event_log_monitor import event_log_monitor
+from app.monitoring.network_monitor import network_monitor
+from app.monitoring.process_monitor import process_monitor
 from app.ui.dashboard import DashboardView
+from app.ui.endpoint_view import EndpointView
 from app.ui.history_view import HistoryView
+from app.ui.process_view import ProcessView
 from app.ui.quarantine_view import QuarantineView
 from app.ui.scanner_view import ScannerView
 from app.ui.settings_view import SettingsView
@@ -33,15 +38,19 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("SentinelX — AI-Powered Local Malware & Intrusion Detection System")
-        self.resize(1180, 780)
-        self.setMinimumSize(980, 640)
+        self.resize(1240, 800)
+        self.setMinimumSize(1020, 680)
         self.setStyleSheet(MAIN_STYLESHEET)
 
         self._init_ui()
         self._connect_signals()
 
-        # Start downloads monitor by default
+        # Start defense background monitors
         download_monitor.start()
+        process_monitor.start()
+        network_monitor.start()
+        event_log_monitor.start()
+
 
     def _init_ui(self) -> None:
         central_widget = QWidget()
@@ -100,22 +109,34 @@ class MainWindow(QMainWindow):
         self.nav_group.addButton(self.btn_nav_scanner, 1)
         sidebar_layout.addWidget(self.btn_nav_scanner)
 
+        self.btn_nav_process = QPushButton("⚡  Process Monitor")
+        self.btn_nav_process.setProperty("class", "nav-btn")
+        self.btn_nav_process.setCheckable(True)
+        self.nav_group.addButton(self.btn_nav_process, 2)
+        sidebar_layout.addWidget(self.btn_nav_process)
+
+        self.btn_nav_endpoint = QPushButton("🌐  Endpoint Telemetry")
+        self.btn_nav_endpoint.setProperty("class", "nav-btn")
+        self.btn_nav_endpoint.setCheckable(True)
+        self.nav_group.addButton(self.btn_nav_endpoint, 3)
+        sidebar_layout.addWidget(self.btn_nav_endpoint)
+
         self.btn_nav_quarantine = QPushButton("📦  Quarantine Vault")
         self.btn_nav_quarantine.setProperty("class", "nav-btn")
         self.btn_nav_quarantine.setCheckable(True)
-        self.nav_group.addButton(self.btn_nav_quarantine, 2)
+        self.nav_group.addButton(self.btn_nav_quarantine, 4)
         sidebar_layout.addWidget(self.btn_nav_quarantine)
 
         self.btn_nav_history = QPushButton("📜  Scan History")
         self.btn_nav_history.setProperty("class", "nav-btn")
         self.btn_nav_history.setCheckable(True)
-        self.nav_group.addButton(self.btn_nav_history, 3)
+        self.nav_group.addButton(self.btn_nav_history, 5)
         sidebar_layout.addWidget(self.btn_nav_history)
 
         self.btn_nav_settings = QPushButton("⚙️  Settings")
         self.btn_nav_settings.setProperty("class", "nav-btn")
         self.btn_nav_settings.setCheckable(True)
-        self.nav_group.addButton(self.btn_nav_settings, 4)
+        self.nav_group.addButton(self.btn_nav_settings, 6)
         sidebar_layout.addWidget(self.btn_nav_settings)
 
         sidebar_layout.addStretch()
@@ -129,7 +150,7 @@ class MainWindow(QMainWindow):
 
         status_chip = QLabel("🟢  PROTECTION ACTIVE")
         status_chip.setStyleSheet(f"color: {COLOR_SAFE}; font-size: 11px; font-weight: bold;")
-        ver_lbl = QLabel("SentinelX v0.1.0 (MVP)")
+        ver_lbl = QLabel("SentinelX v0.3.0 (Phases 1-3)")
         ver_lbl.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 11px;")
 
         f_layout.addWidget(status_chip)
@@ -170,15 +191,19 @@ class MainWindow(QMainWindow):
         self.stack = QStackedWidget()
         self.view_dashboard = DashboardView()
         self.view_scanner = ScannerView()
+        self.view_process = ProcessView()
+        self.view_endpoint = EndpointView()
         self.view_quarantine = QuarantineView()
         self.view_history = HistoryView()
         self.view_settings = SettingsView()
 
         self.stack.addWidget(self.view_dashboard)  # 0
         self.stack.addWidget(self.view_scanner)  # 1
-        self.stack.addWidget(self.view_quarantine)  # 2
-        self.stack.addWidget(self.view_history)  # 3
-        self.stack.addWidget(self.view_settings)  # 4
+        self.stack.addWidget(self.view_process)  # 2
+        self.stack.addWidget(self.view_endpoint)  # 3
+        self.stack.addWidget(self.view_quarantine)  # 4
+        self.stack.addWidget(self.view_history)  # 5
+        self.stack.addWidget(self.view_settings)  # 6
 
         content_layout.addWidget(self.stack, 1)
         root_layout.addWidget(content_container, 1)
@@ -188,7 +213,7 @@ class MainWindow(QMainWindow):
 
         # Dashboard quick actions
         self.view_dashboard.navigate_to_scanner.connect(self._switch_to_scanner_with_mode)
-        self.view_dashboard.navigate_to_quarantine.connect(lambda: self._switch_to_index(2))
+        self.view_dashboard.navigate_to_quarantine.connect(lambda: self._switch_to_index(4))
 
         # Scan notifications
         self.view_scanner.scan_completed_notify.connect(self.view_dashboard.refresh_data)
@@ -206,9 +231,11 @@ class MainWindow(QMainWindow):
         titles = {
             0: "SYSTEM OVERVIEW",
             1: "THREAT SCANNER",
-            2: "QUARANTINE VAULT",
-            3: "SCAN & DETECTION AUDIT LOG",
-            4: "SYSTEM PREFERENCES",
+            2: "REAL-TIME PROCESS MONITOR",
+            3: "ENDPOINT & NETWORK TELEMETRY",
+            4: "QUARANTINE VAULT",
+            5: "SCAN & DETECTION AUDIT LOG",
+            6: "SYSTEM PREFERENCES",
         }
         self.stack.setCurrentIndex(index)
         self.lbl_view_title.setText(titles.get(index, "SENTINELX"))
@@ -221,8 +248,13 @@ class MainWindow(QMainWindow):
         if index == 0:
             self.view_dashboard.refresh_data()
         elif index == 2:
-            self.view_quarantine.refresh_quarantine()
+            self.view_process.refresh_processes()
         elif index == 3:
+            self.view_endpoint.refresh_network_connections()
+            self.view_endpoint.refresh_event_logs()
+        elif index == 4:
+            self.view_quarantine.refresh_quarantine()
+        elif index == 5:
             self.view_history.refresh_history()
 
     def _switch_to_scanner_with_mode(self, mode: str) -> None:
@@ -232,4 +264,8 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event) -> None:
         """Handle clean application shutdown."""
         download_monitor.stop()
+        process_monitor.stop()
+        network_monitor.stop()
+        event_log_monitor.stop()
         super().closeEvent(event)
+

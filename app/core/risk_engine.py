@@ -1,6 +1,7 @@
 """Risk scoring engine computing multi-layer threat scores and risk classifications."""
 
 from dataclasses import dataclass, field
+from typing import Any
 
 from app.config.settings import settings
 from app.core.analyzer import StaticAnalysisResult
@@ -17,6 +18,7 @@ class RiskBreakdown:
     suspicious_api_score: int = 0
     yara_score: int = 0
     extension_score: int = 0
+    ml_score: int = 0
 
 
 @dataclass
@@ -28,6 +30,7 @@ class RiskAssessmentResult:
     breakdown: RiskBreakdown = field(default_factory=RiskBreakdown)
     reasons: list[str] = field(default_factory=list)
     detections: list[DetectionRecord] = field(default_factory=list)
+    ml_prediction: Any = None
 
 
 class RiskEngine:
@@ -39,6 +42,7 @@ class RiskEngine:
         weight_suspicious_api: int | None = None,
         weight_yara: int | None = None,
         weight_extension: int | None = None,
+        weight_ml: int | None = None,
     ) -> None:
         self.weight_entropy = (
             weight_entropy if weight_entropy is not None else settings.weight_entropy
@@ -52,13 +56,16 @@ class RiskEngine:
         self.weight_extension = (
             weight_extension if weight_extension is not None else settings.weight_extension
         )
+        self.weight_ml = weight_ml if weight_ml is not None else settings.weight_ml
 
     def evaluate(
         self,
         metadata: FileMetadata,
         static_analysis: StaticAnalysisResult,
         yara_matches: list[YaraMatch],
+        ml_prediction: Any = None,
     ) -> RiskAssessmentResult:
+
         """Calculate the composite risk score and generate detection records."""
         reasons: list[str] = []
         detections: list[DetectionRecord] = []
@@ -173,8 +180,33 @@ class RiskEngine:
         elif ext in executable_binaries:
             ext_score = int(self.weight_extension * 0.5)
 
-        # Composite risk score calculation (formula from spec)
-        raw_score = entropy_score + api_score + yara_score + ext_score
+        # 5. Calculate Machine Learning Malware Score
+        ml_score = 0
+        if ml_prediction and getattr(ml_prediction, "is_pe", False):
+            prob = getattr(ml_prediction, "malware_probability", 0.0)
+            if prob >= settings.ml_malware_threshold:
+                ml_score = self.weight_ml
+                detections.append(
+                    DetectionRecord(
+                        detection_type=DetectionType.ML_MALWARE.value,
+                        severity=RiskLevel.HIGH.value,
+                        reason=f"AI/ML Classifier: High malware probability ({prob:.1%})",
+                    )
+                )
+                reasons.append(f"AI/ML Malware Prediction: High Probability ({prob:.1%})")
+            elif prob >= 0.40:
+                ml_score = int(self.weight_ml * 0.5)
+                detections.append(
+                    DetectionRecord(
+                        detection_type=DetectionType.ML_MALWARE.value,
+                        severity=RiskLevel.LOW.value,
+                        reason=f"AI/ML Classifier: Elevated malware probability ({prob:.1%})",
+                    )
+                )
+                reasons.append(f"AI/ML Malware Prediction: Suspicious ({prob:.1%})")
+
+        # Composite risk score calculation
+        raw_score = entropy_score + api_score + yara_score + ext_score + ml_score
         risk_score = max(0, min(100, raw_score))
 
         # Categorize Level based on configurable thresholds
@@ -208,11 +240,14 @@ class RiskEngine:
                 suspicious_api_score=api_score,
                 yara_score=yara_score,
                 extension_score=ext_score,
+                ml_score=ml_score,
             ),
             reasons=reasons,
             detections=detections,
+            ml_prediction=ml_prediction,
         )
 
 
 # Global risk engine instance
 risk_engine = RiskEngine()
+

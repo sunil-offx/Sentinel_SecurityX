@@ -130,18 +130,32 @@ sentinelx/
 │   │   ├── yara_engine.py          # YARA compilation and matching engine
 │   │   └── rules/
 │   │       └── default.yar         # Default detection rules
+│   ├── ml/
+│   │   ├── __init__.py
+│   │   ├── classifier.py           # Random Forest PE malware classifier (EMBER)
+│   │   └── features.py             # 52-dimensional PE feature extractor
 │   ├── monitoring/
 │   │   ├── __init__.py
-│   │   └── download_monitor.py     # Background directory watcher
+│   │   ├── download_monitor.py     # Background directory watcher
+│   │   ├── event_log_monitor.py    # Windows Event Log ingestion (4688, 4104, 7045)
+│   │   ├── network_monitor.py      # Outbound connection inspection & socket analysis
+│   │   └── process_monitor.py      # Real-time process tree & LOLBin monitor
+│   ├── threat_intel/
+│   │   ├── __init__.py
+│   │   ├── key_store.py            # Secure encrypted API key vault
+│   │   └── threat_client.py        # VirusTotal v3 & AbuseIPDB client with caching
 │   └── ui/
 │       ├── __init__.py
 │       ├── dashboard.py            # Dashboard view with stats & status banner
+│       ├── endpoint_view.py        # Network telemetry, Threat Intel & Event Logs
 │       ├── history_view.py         # Historical scan audit log
 │       ├── main_window.py          # Shell window with sidebar navigation
+│       ├── process_view.py         # Real-time process monitor & termination controls
 │       ├── quarantine_view.py      # Quarantine vault management
-│       ├── scanner_view.py         # Multi-threaded file & folder scanner
-│       ├── settings_view.py        # Risk thresholds & shield settings
+│       ├── scanner_view.py         # Multi-threaded scanner with ML & Threat Intel
+│       ├── settings_view.py        # Thresholds, ML configs & API keys
 │       └── styles.py               # Cyber dark design system & tokens
+
 ├── tests/
 │   ├── fixtures/                   # Benign simulated test files (NO real malware)
 │   ├── unit/                       # Unit tests for hasher, analyzer, YARA, DB, etc.
@@ -255,13 +269,14 @@ Compile `installer/sentinelx.iss` using Inno Setup 6 to produce `dist/installer/
   - Downloads folder monitor
   - PySide6 desktop GUI with dark cybersecurity theme
   - Automated tests (unit, integration, E2E)
-- [ ] **Phase 2: AI & Real-Time Security (Upcoming)**
-  - Machine learning PE malware classifier (Random Forest / XGBoost with EMBER feature set)
-  - Real-time process monitor (parent-child relationship, command lines, memory injection tracking)
-- [ ] **Phase 3: Advanced Endpoint Security**
-  - Outbound connection inspection & network telemetry
-  - Threat intelligence integrations (VirusTotal / AbuseIPDB with secure API key storage)
-  - Windows Event Log telemetry ingestion
+- [x] **Phase 2: AI & Real-Time Security (Complete)**
+  - Machine learning PE malware classifier (52-feature EMBER Random Forest model with explainable AI top indicators)
+  - Real-time process monitor (parent-child relationship anomalies, LOLBin abuse, memory injection tracking, and safe process termination)
+- [x] **Phase 3: Advanced Endpoint Security (Complete)**
+  - Outbound connection inspection & network telemetry (C2 port detection, non-network binary inspection, public/private IP categorization)
+  - Threat intelligence integrations (VirusTotal v3 & AbuseIPDB APIs with encrypted key vault and local SQLite caching)
+  - Windows Event Log telemetry ingestion (Process Creation 4688, PowerShell Script Block 4104, Service Installation 7045)
+
 
 ---
 

@@ -128,7 +128,7 @@ class DashboardView(QWidget):
 
         # 2. Key Metrics Row
         cards_layout = QHBoxLayout()
-        cards_layout.setSpacing(16)
+        cards_layout.setSpacing(12)
 
         self.card_scanned = StatCard(
             "Files Scanned", "0", "Total inspected files", COLOR_ACCENT_CYAN
@@ -137,15 +137,24 @@ class DashboardView(QWidget):
             "Threats Detected", "0", "High & critical alerts", COLOR_CRITICAL
         )
         self.card_quarantine = StatCard("Quarantined", "0", "Isolated in safe vault", COLOR_HIGH)
-        self.card_monitor = StatCard(
-            "Download Shield", "ACTIVE", "Monitoring ~/Downloads", COLOR_SAFE
+        self.card_process = StatCard(
+            "Process Alerts", "0", "Active suspicious processes", COLOR_CRITICAL
+        )
+        self.card_network = StatCard(
+            "Network Telemetry", "0", "Recorded socket anomalies", COLOR_ACCENT_CYAN
+        )
+        self.card_ml = StatCard(
+            "AI PE Classifier", "ACTIVE", "EMBER Random Forest", COLOR_SAFE
         )
 
         cards_layout.addWidget(self.card_scanned)
         cards_layout.addWidget(self.card_threats)
         cards_layout.addWidget(self.card_quarantine)
-        cards_layout.addWidget(self.card_monitor)
+        cards_layout.addWidget(self.card_process)
+        cards_layout.addWidget(self.card_network)
+        cards_layout.addWidget(self.card_ml)
         layout.addLayout(cards_layout)
+
 
         # 3. Quick Action Row
         actions_frame = QFrame()
@@ -213,8 +222,11 @@ class DashboardView(QWidget):
         self.card_scanned.set_value(f"{stats['total_scanned']:,}")
         self.card_threats.set_value(f"{stats['threats_detected']:,}")
         self.card_quarantine.set_value(f"{stats['active_quarantined']:,}")
+        self.card_process.set_value(f"{stats.get('active_process_alerts', 0):,}")
+        self.card_network.set_value(f"{stats.get('total_network_alerts', 0):,}")
 
         recent_scans = db.get_recent_scans(limit=10)
+
         self.table_recent.setRowCount(len(recent_scans))
 
         for row_idx, scan in enumerate(recent_scans):
