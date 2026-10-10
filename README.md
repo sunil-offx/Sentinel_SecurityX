@@ -1,285 +1,336 @@
-# SentinelX — AI-Powered Local Malware & Intrusion Detection System
+<div align="center">
 
-[![CI/CD Pipeline](https://github.com/sunil-offx/Sentinel_SecurityX/actions/workflows/ci.yml/badge.svg)](https://github.com/sunil-offx/Sentinel_SecurityX/actions)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Platform Windows](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-0078d7.svg)](https://www.microsoft.com/windows)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
-[![Security: bandit](https://img.shields.io/badge/security-bandit-green.svg)](https://github.com/PyCQA/bandit)
+# 🛡️ SentinelX
+### AI-Powered Local Malware & Intrusion Detection for Windows
 
-**SentinelX** is a local-first Windows malware and intrusion detection system designed for students, developers, home users, and small organizations. It inspects, scores, and quarantines suspicious files and scripts using defense-in-depth static heuristics, YARA rules, and PE structure analysis—with zero mandatory cloud dependencies.
+**A local-first defensive security desktop application that analyzes suspicious files, explains risk signals, monitors endpoint activity, and isolates potential threats.**
 
-> **Defensive Security Notice**: SentinelX is purely defensive. It analyzes, isolates, and quarantines threats; it does not perform credential theft, exploitation, persistence, or offensive actions.
+<p>
+  <a href="https://github.com/sunil-offx/Sentinel_SecurityX/stargazers">
+    <img src="https://img.shields.io/github/stars/sunil-offx/Sentinel_SecurityX?style=for-the-badge&logo=github&color=181717" alt="GitHub stars">
+  </a>
+  <a href="https://github.com/sunil-offx/Sentinel_SecurityX/network/members">
+    <img src="https://img.shields.io/github/forks/sunil-offx/Sentinel_SecurityX?style=for-the-badge&logo=github&color=181717" alt="GitHub forks">
+  </a>
+  <a href="https://github.com/sunil-offx/Sentinel_SecurityX/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/sunil-offx/Sentinel_SecurityX?style=for-the-badge" alt="License">
+  </a>
+  <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D6?style=for-the-badge&logo=windows" alt="Windows">
+  <img src="https://img.shields.io/badge/Python-3.11%20%7C%203.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+</p>
 
----
+**[Explore the Code](https://github.com/sunil-offx/Sentinel_SecurityX) · [Report a Bug](https://github.com/sunil-offx/Sentinel_SecurityX/issues) · [View the Risk Register](RISK_REGISTER.md)**
 
-## 🏛️ Architecture Overview
-
-```
-                      ┌───────────────────────┐
-                      │     SentinelX UI      │
-                      │   (PySide6 Desktop)   │
-                      └───────────┬───────────┘
-                                  │
-                      ┌───────────▼───────────┐
-                      │    Security Core      │
-                      │                       │
-                      │ • File Scanner        │
-                      │ • Static Analyzer     │
-                      │ • Cryptographic Hasher│
-                      │ • Download Watcher    │
-                      └───────────┬───────────┘
-                                  │
-          ┌───────────────────────┼───────────────────────┐
-          ▼                       ▼                       ▼
-    ┌───────────┐           ┌───────────┐           ┌───────────┐
-    │   YARA    │           │  Static   │           │ Extension │
-    │  Engine   │           │ Heuristics│           │  Risk     │
-    └─────┬─────┘           └─────┬─────┘           └─────┬─────┘
-          │                       │                       │
-          └───────────────────────┼───────────────────────┘
-                                  ▼
-                         ┌─────────────────┐
-                         │  Risk Scoring   │
-                         │    (0 - 100)    │
-                         └────────┬────────┘
-                                  │
-         ┌────────────────┬───────┴────────┬────────────────┐
-         ▼                ▼                ▼                ▼
-       SAFE              LOW             HIGH            CRITICAL
-      (0–29)           (30–59)          (60–79)          (80–100)
-                                           │                │
-                                           └───────┬────────┘
-                                                   ▼
-                                             ┌────────────┐
-                                             │ Quarantine │
-                                             └─────┬──────┘
-                                                   ▼
-                                            SQLite Database
-```
+</div>
 
 ---
 
-## 🚀 Key Features (Phase 1 — MVP)
+## 👋 Project at a Glance
 
-### 1. Multi-Format File Scanner
-- Supports executables and scripts: `.exe`, `.dll`, `.msi`, `.bat`, `.cmd`, `.ps1`, `.vbs`, `.js`, `.scr`.
-- Calculates streaming cryptographic hashes: **SHA-256**, **MD5**, and **SHA-1**.
-- Extracts metadata: exact byte size, human-readable size, MIME type, creation time, and modification time.
+SentinelX is a **Windows endpoint-security project** built to demonstrate how multiple defensive signals can be combined into a practical malware-triage workflow. It brings file scanning, static analysis, YARA matching, machine-learning classification, endpoint telemetry, risk scoring, and quarantine management into a desktop interface.
 
-### 2. Static Analyzer & Heuristics
-- **Shannon Entropy Calculation**: Identifies packed, obfuscated, or encrypted payloads ($H \in [0.0, 8.0]$).
-- **Windows PE Header Parsing** (`pefile`):
-  - Section anomaly inspection (e.g. non-standard sections, `.upx`, section entropy > 7.2).
-  - W^X violation detection (sections marked simultaneously **WRITABLE** and **EXECUTABLE**).
-  - Suspicious Windows API import detection (e.g., `VirtualAllocEx`, `WriteProcessMemory`, `CreateRemoteThread`, `SetWindowsHookEx`, `URLDownloadToFile`).
-- **Script Command Heuristics**: Detects malicious execution cradles in `.ps1`, `.bat`, `.vbs`, and `.js` (e.g., `Invoke-Expression`, `Net.WebClient.DownloadString`, `-WindowStyle Hidden`, `powershell -enc`, `certutil -urlcache`).
+Instead of relying on a single detection signal, SentinelX combines indicators and provides readable reasons that help a user investigate why a file or activity may be suspicious.
 
-### 3. YARA Detection Engine
-- Native YARA rule compiler and scanner.
-- Pre-packaged with detection rules in `app/detection/rules/default.yar`.
-- Extensible rule repository in `yara_rules/threats.yar`.
+> **Security scope:** SentinelX is designed for defensive analysis and authorized endpoint monitoring. It is not an exploitation or credential-theft tool. Detection results are indicators for investigation, not a guarantee that a file is malicious or safe.
 
-### 4. Configurable Multi-Factor Risk Engine
-- Implements composite risk formula:
-  $$\text{Risk Score} = \text{Entropy Score} + \text{Suspicious API Score} + \text{YARA Score} + \text{Extension Score}$$
-- Classifies risk level into `SAFE`, `LOW`, `HIGH`, or `CRITICAL`.
-- Generates transparent, human-readable diagnostic reasons for every detection.
+## ✨ Why Recruiters Should Explore This Project
 
-### 5. Secure Quarantine Vault
-- **Atomic File Move**: Segregates suspicious files to `.sentinelx/quarantine/`.
-- **Privilege Stripping**: Removes execute and write permissions (`stat.S_IREAD`) to neutralize accidental launch.
-- **Sidecar Metadata (`.qmeta`)**: Preserves original paths, hashes, and isolation reasons for offline recovery.
-- **Safe Restoration & Secure Shredding**: One-click restore back to original directory or defensive zero-overwrite shredding.
+- **Security engineering:** file inspection, hashes, PE metadata, YARA rules, and suspicious script patterns.
+- **Applied machine learning:** a Random Forest PE classifier using EMBER-style features, with indicators to help explain predictions.
+- **Endpoint monitoring:** process activity, network connections, Downloads-folder events, and selected Windows Event Log sources.
+- **Risk-based decision support:** combines multiple signals into a 0–100 score and categorizes findings.
+- **Desktop application development:** a PySide6 interface, persistent SQLite records, scan history, and quarantine workflows.
+- **Engineering practices:** unit/integration/end-to-end tests, linting, security checks, and packaging scripts.
 
-### 6. Background Real-Time Directory Shield
-- Asynchronously monitors the Windows `Downloads` directory for incoming executables or scripts.
-- Automatically queues new files for scan without manual user intervention.
+## 🧭 Interactive Contents
 
-### 7. Modern PySide6 GUI
-- **Dashboard**: Live system protection status, metric cards, threat distribution, and quick actions.
-- **Threat Scanner**: Single file and recursive directory scanning, progress tracking, and side-by-side threat inspection.
-- **Quarantine Vault View**: Isolated files table with instant restore and shredding actions.
-- **Scan History**: Full audit trail with search and filter capabilities.
-- **Settings**: Customizable risk score cutoffs, YARA reload, and monitor folder picker.
+| Jump to | Jump to |
+|---|---|
+| [Core capabilities](#-core-capabilities) | [Architecture](#️-architecture) |
+| [Risk model](#-risk-scoring) | [Technology stack](#️-technology-stack) |
+| [Run locally](#-run-locally) | [Testing and quality](#-testing-and-code-quality) |
+| [Project structure](#-project-structure) | [Roadmap and limitations](#-roadmap-and-limitations) |
 
----
+## 🔎 Core Capabilities
 
-## 📁 Project Structure
+<details open>
+<summary><strong>1. File scanning and metadata</strong></summary>
 
+- Scans supported executable and script formats: `.exe`, `.dll`, `.msi`, `.bat`, `.cmd`, `.ps1`, `.vbs`, `.js`, and `.scr`.
+- Calculates streaming SHA-256, MD5, and SHA-1 hashes.
+- Extracts file metadata such as size, MIME type, and timestamps.
+- Supports single-file and recursive directory scans.
+</details>
+
+<details>
+<summary><strong>2. Static analysis and YARA detection</strong></summary>
+
+- Shannon entropy analysis to flag packed, obfuscated, or high-entropy content.
+- PE structure inspection through `pefile`, including section anomalies and suspicious imports.
+- Script heuristics for suspicious command patterns.
+- YARA rule compilation and matching, with rules that can be extended.
+- Produces human-readable detection reasons to support triage.
+</details>
+
+<details>
+<summary><strong>3. Machine-learning-assisted file analysis</strong></summary>
+
+- Includes a Random Forest PE malware classifier using a 52-dimensional feature extractor described in the project.
+- Uses model output as one signal within the wider detection workflow.
+- Helps demonstrate how traditional rules and ML-based signals can complement each other.
+
+**Important:** model predictions depend on feature quality, training data, and threshold configuration. They should not be treated as definitive verdicts.
+</details>
+
+<details>
+<summary><strong>4. Risk scoring and quarantine</strong></summary>
+
+- Combines configured indicators such as entropy, suspicious API imports, YARA matches, and extension risk.
+- Assigns a score from 0 to 100 and maps it to a risk category.
+- Isolates selected suspicious files in a quarantine area.
+- Stores metadata to support review and recovery workflows.
+- Provides restore and secure-removal actions in the application.
+
+Review a file and its provenance before restoring or permanently removing it.
+</details>
+
+<details>
+<summary><strong>5. Endpoint visibility and threat intelligence</strong></summary>
+
+- Watches the Downloads directory for newly arriving executable/script files.
+- Includes process-monitoring components for suspicious process relationships and living-off-the-land binary (LOLBin) indicators.
+- Includes outbound connection inspection and network telemetry.
+- Supports selected Windows Event Log sources: process creation (4688), PowerShell Script Block Logging (4104), and service installation (7045).
+- Integrates optional VirusTotal v3 and AbuseIPDB lookups, with local caching and an encrypted API-key vault.
+
+External reputation services require their own API credentials and may transmit queried indicators to those providers. Review each provider's terms and privacy implications before enabling them.
+</details>
+
+<details>
+<summary><strong>6. Desktop dashboard and audit history</strong></summary>
+
+- PySide6 desktop UI with a cybersecurity-focused dark interface.
+- Dashboard summaries and threat distribution.
+- Scanner progress and finding details.
+- Quarantine vault management.
+- Searchable scan history.
+- Settings for thresholds, monitoring folders, model configuration, and API keys.
+</details>
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart TD
+    A[PySide6 Desktop UI] --> B[Security Core]
+    B --> C[File Scanner and Hasher]
+    B --> D[Static Analyzer]
+    B --> E[YARA Engine]
+    B --> F[ML Classifier]
+    B --> G[Endpoint Telemetry]
+    C --> H[Risk Engine]
+    D --> H
+    E --> H
+    F --> H
+    G --> I[Investigation Signals]
+    I --> H
+    H --> J{Risk Category}
+    J --> K[SAFE]
+    J --> L[LOW]
+    J --> M[HIGH]
+    J --> N[CRITICAL]
+    M --> O[Review / Quarantine Workflow]
+    N --> O
+    O --> P[(SQLite History)]
+    K --> P
+    L --> P
 ```
-sentinelx/
-├── app/
-│   ├── main.py                     # Application entry point & Qt loop
-│   ├── config/
-│   │   ├── __init__.py
-│   │   └── settings.py             # Application paths, thresholds, and weights
-│   ├── core/
-│   │   ├── __init__.py
-│   │   ├── analyzer.py             # Static analysis (entropy, PE headers, scripts)
-│   │   ├── hasher.py               # Streaming hashing (SHA-256, MD5, SHA-1)
-│   │   ├── quarantine.py           # Atomic isolation & restoration vault
-│   │   ├── risk_engine.py          # Composite risk scoring engine
-│   │   └── scanner.py              # File & directory scan orchestrator
-│   ├── database/
-│   │   ├── __init__.py
-│   │   ├── database.py             # SQLite persistence & query API
-│   │   └── models.py               # Data models (ScannedFile, Detection, Quarantine)
-│   ├── detection/
-│   │   ├── __init__.py
-│   │   ├── yara_engine.py          # YARA compilation and matching engine
-│   │   └── rules/
-│   │       └── default.yar         # Default detection rules
-│   ├── ml/
-│   │   ├── __init__.py
-│   │   ├── classifier.py           # Random Forest PE malware classifier (EMBER)
-│   │   └── features.py             # 52-dimensional PE feature extractor
-│   ├── monitoring/
-│   │   ├── __init__.py
-│   │   ├── download_monitor.py     # Background directory watcher
-│   │   ├── event_log_monitor.py    # Windows Event Log ingestion (4688, 4104, 7045)
-│   │   ├── network_monitor.py      # Outbound connection inspection & socket analysis
-│   │   └── process_monitor.py      # Real-time process tree & LOLBin monitor
-│   ├── threat_intel/
-│   │   ├── __init__.py
-│   │   ├── key_store.py            # Secure encrypted API key vault
-│   │   └── threat_client.py        # VirusTotal v3 & AbuseIPDB client with caching
-│   └── ui/
-│       ├── __init__.py
-│       ├── dashboard.py            # Dashboard view with stats & status banner
-│       ├── endpoint_view.py        # Network telemetry, Threat Intel & Event Logs
-│       ├── history_view.py         # Historical scan audit log
-│       ├── main_window.py          # Shell window with sidebar navigation
-│       ├── process_view.py         # Real-time process monitor & termination controls
-│       ├── quarantine_view.py      # Quarantine vault management
-│       ├── scanner_view.py         # Multi-threaded scanner with ML & Threat Intel
-│       ├── settings_view.py        # Thresholds, ML configs & API keys
-│       └── styles.py               # Cyber dark design system & tokens
 
-├── tests/
-│   ├── fixtures/                   # Benign simulated test files (NO real malware)
-│   ├── unit/                       # Unit tests for hasher, analyzer, YARA, DB, etc.
-│   ├── integration/                # Pipeline tests (File -> Scanner -> DB)
-│   └── e2e/                        # End-to-end acceptance tests (AT-01 to AT-05)
-├── installer/
-│   └── sentinelx.iss               # Inno Setup 6 compiler configuration
-├── scripts/
-│   ├── build.py                    # Standalone PyInstaller build script
-│   └── package.py                  # Full packaging test and build pipeline
-├── yara_rules/
-│   └── threats.yar                 # Extended threat rule repository
-├── .github/
-│   └── workflows/
-│       └── ci.yml                  # GitHub Actions CI workflow
-├── requirements.txt
-├── pyproject.toml
-├── RISK_REGISTER.md                # Project security & operational risk register
-├── LICENSE
-└── README.md
-```
+### Detection workflow
 
----
+1. **Collect:** inspect a file or observe a configured endpoint event.
+2. **Analyze:** calculate hashes and metadata; run relevant static, YARA, PE, script, and ML checks.
+3. **Score:** combine configured indicators into a risk score.
+4. **Explain:** show the signals that contributed to the finding.
+5. **Respond:** review, isolate, restore, or remove a file as appropriate.
+6. **Record:** preserve scan and detection history for later investigation.
 
-## 🛠️ Getting Started
+## 📊 Risk Scoring
 
-### Prerequisites
-- Windows 10/11 64-bit
+| Score | Category | Suggested interpretation |
+|---:|---|---|
+| 0–29 | `SAFE` | No strong risk signals found by the configured checks |
+| 30–59 | `LOW` | Some indicators need review |
+| 60–79 | `HIGH` | Multiple or stronger suspicious indicators |
+| 80–100 | `CRITICAL` | High-priority review and response |
+
+The score is a **heuristic prioritization aid**, not a calibrated probability of malware. Thresholds and detection coverage influence the result.
+
+## 🧰 Technology Stack
+
+| Area | Tools / technologies |
+|---|---|
+| Language | Python |
+| Desktop UI | PySide6 / Qt |
+| Persistence | SQLite |
+| File and PE inspection | `pefile`, Python file and metadata APIs |
+| Detection rules | YARA |
+| Machine learning | scikit-learn, Random Forest, EMBER-style PE features |
+| Endpoint visibility | process, network, Downloads-folder and Windows Event Log monitoring |
+| Threat intelligence | VirusTotal v3, AbuseIPDB (optional) |
+| Testing | pytest, coverage tooling |
+| Code quality and security checks | Ruff, Bandit |
+| Packaging | PyInstaller, Inno Setup |
+| CI | GitHub Actions |
+
+## 🚀 Run Locally
+
+### Requirements
+
+- Windows 10/11, 64-bit
 - Python 3.11 or 3.12
 - Git
 
-### Installation
+### 1. Clone the repository
 
 ```powershell
-# 1. Clone the repository
-git clone https://github.com/sentinelx/sentinelx.git
-cd sentinelx
-
-# 2. Create and activate a virtual environment
-python -m venv .venv
-.venv\Scripts\activate
-
-# 3. Upgrade pip and install dependencies
-pip install --upgrade pip
-pip install -r requirements.txt
-
-# 4. Generate benign test fixtures
-python tests/fixtures/generate_fixtures.py
+git clone https://github.com/sunil-offx/Sentinel_SecurityX.git
+cd Sentinel_SecurityX
 ```
 
-### Launching the Application
+### 2. Create and activate a virtual environment
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+If PowerShell blocks activation, use Command Prompt and run:
+
+```bat
+.venv\Scripts\activate.bat
+```
+
+### 3. Install dependencies
+
+```powershell
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### 4. Launch SentinelX
 
 ```powershell
 python app/main.py
 ```
 
----
-
-## 🧪 Testing & Verification
-
-SentinelX includes a complete automated test suite verifying all MVP acceptance criteria. **No real malware samples are ever used in development; benign fixtures simulate threat characteristics.**
+### Optional: generate benign test fixtures
 
 ```powershell
-# Run the entire test suite
+python tests/fixtures/generate_fixtures.py
+```
+
+Use benign fixtures for development and verification. Do not test with real malware on a personal or production machine.
+
+## 🧪 Testing and Code Quality
+
+Run commands from the repository root:
+
+```powershell
+# Automated tests
 python -m pytest -v
 
-# Run with coverage report
+# Coverage report
 python -m pytest -v --cov=app
 
-# Run Code Linter (Ruff)
+# Lint checks
 python -m ruff check .
 
-# Run Security Vulnerability Audit (Bandit)
+# Static security checks
 python -m bandit -r app
 ```
 
-### Acceptance Test Coverage (Section 12)
-- **AT-01 (File Scanning)**: Validates metadata extraction and SHA-256 computation (`test_at_01_file_scanning`).
-- **AT-02 (Detection)**: Verifies YARA and heuristic pattern identification (`test_at_02_detection`).
-- **AT-03 (Quarantine)**: Verifies atomic quarantine file isolation and deprivileging (`test_at_03_quarantine`).
-- **AT-04 (Scan History)**: Verifies persistence of scans and detections to SQLite (`test_at_04_history`).
-- **AT-05 (Download Monitoring)**: Verifies automated queuing and analysis of new files (`test_at_05_download_monitoring`).
+The repository includes test areas for unit, integration, and end-to-end checks. Test availability and results can vary by environment and installed dependencies; run the suite locally to verify the current checkout.
 
----
+## 📁 Project Structure
 
-## 📦 Building Standalone Executable & Installer
-
-### 1. Build Standalone `.exe` (PyInstaller)
-
-```powershell
-python scripts/build.py
+```text
+Sentinel_SecurityX/
+├── app/
+│   ├── config/          # Paths, thresholds, and settings
+│   ├── core/            # Scanner, analyzer, hasher, risk engine, quarantine
+│   ├── database/        # SQLite persistence and models
+│   ├── detection/       # YARA engine and default rules
+│   ├── ml/              # PE feature extraction and classifier
+│   ├── monitoring/      # Download, process, network, and event-log monitors
+│   ├── threat_intel/    # API-key storage and reputation clients
+│   └── ui/              # Dashboard, scanner, history, settings, quarantine views
+├── tests/               # Fixtures and automated tests
+├── yara_rules/          # Additional YARA rules
+├── scripts/             # Build and packaging helpers
+├── installer/           # Inno Setup configuration
+├── .github/workflows/   # CI workflow
+├── RISK_REGISTER.md     # Security and operational risks
+├── requirements.txt
+├── pyproject.toml
+└── README.md
 ```
-Outputs standalone directory to `dist/SentinelX/SentinelX.exe`.
 
-### 2. Generate Setup Installer (Inno Setup)
+## 🎯 Engineering Challenges Addressed
 
-Compile `installer/sentinelx.iss` using Inno Setup 6 to produce `dist/installer/SentinelX-Setup-0.1.0-x64.exe`.
+- **Combining heterogeneous signals:** rule matches, static heuristics, PE metadata, and ML output have different strengths and failure modes.
+- **Making detections explainable:** risk reasons help users understand what triggered a finding instead of receiving only a label.
+- **Handling sensitive actions carefully:** quarantine and restore operations need clear state, metadata, and user review.
+- **Working locally first:** core analysis is designed to operate without mandatory cloud dependencies; optional reputation integrations are separate.
+- **Building for maintainability:** the codebase separates core analysis, persistence, UI, monitoring, and testing concerns.
 
----
+## 🗺️ Roadmap and Limitations
 
-## 🗺️ Product Roadmap
+The repository describes the core scanner, risk engine, quarantine, ML-assisted PE analysis, endpoint telemetry, and optional threat-intelligence integrations as implemented project areas. The following are useful next steps for further hardening and demonstrating production readiness:
 
-- [x] **Phase 1: MVP (Complete)**
-  - File scanner (.exe, .dll, .msi, .bat, .cmd, .ps1, .vbs, .js, .scr)
-  - SHA-256, MD5, SHA-1 streaming hasher
-  - Static analyzer (Shannon entropy, PE parser, script heuristics)
-  - YARA rule engine
-  - Risk scoring engine
-  - Safe quarantine vault with restore & shred
-  - SQLite database persistence & stats
-  - Downloads folder monitor
-  - PySide6 desktop GUI with dark cybersecurity theme
-  - Automated tests (unit, integration, E2E)
-- [x] **Phase 2: AI & Real-Time Security (Complete)**
-  - Machine learning PE malware classifier (52-feature EMBER Random Forest model with explainable AI top indicators)
-  - Real-time process monitor (parent-child relationship anomalies, LOLBin abuse, memory injection tracking, and safe process termination)
-- [x] **Phase 3: Advanced Endpoint Security (Complete)**
-  - Outbound connection inspection & network telemetry (C2 port detection, non-network binary inspection, public/private IP categorization)
-  - Threat intelligence integrations (VirusTotal v3 & AbuseIPDB APIs with encrypted key vault and local SQLite caching)
-  - Windows Event Log telemetry ingestion (Process Creation 4688, PowerShell Script Block 4104, Service Installation 7045)
+- [ ] Publish verified screenshots or a short demo GIF of the current application.
+- [ ] Add a CI status badge linked to the actual workflow.
+- [ ] Document measured test coverage and benchmark results from repeatable runs.
+- [ ] Add a threat-model summary and clearly document permissions required by each monitor.
+- [ ] Add reproducible model provenance, evaluation metrics, and false-positive/false-negative analysis.
+- [ ] Validate packaging and installation on clean Windows environments.
 
+**Known limitations to communicate clearly**
+- Static rules and ML can produce false positives and false negatives.
+- Endpoint telemetry availability depends on Windows configuration, permissions, and event-log policy.
+- Optional threat-intelligence lookups depend on network access, API limits, and provider policies.
+- SentinelX should complement—not replace—an established endpoint protection platform and incident-response process.
 
----
+## 🔐 Responsible Use
+
+SentinelX is intended for defensive analysis on systems you own or are authorized to administer. Keep quarantine actions reviewable, use benign fixtures for tests, protect API credentials, and understand the privacy impact before submitting file hashes or indicators to external services.
+
+## 👨‍💻 Author
+
+**Sunilkumar B.** — Computer Science Engineering (AI & ML)
+
+- GitHub: [@sunil-offx](https://github.com/sunil-offx)
+- Project: [Sentinel_SecurityX](https://github.com/sunil-offx/Sentinel_SecurityX)
+
+I'm interested in cybersecurity engineering, applied machine learning, Python development, and building practical tools that make technical findings easier to investigate.
+
+## 🤝 Feedback and Contributions
+
+Found a bug or have an improvement idea?
+
+- [Open an issue](https://github.com/sunil-offx/Sentinel_SecurityX/issues)
+- Fork the repository and create a focused feature branch.
+- Include reproduction steps and tests when submitting a change.
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+Distributed under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+
+**If this project interests you, explore the source code and share feedback.**
+
+[Back to top ↑](#-sentinelx)
+
+</div>
